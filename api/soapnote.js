@@ -2,8 +2,10 @@
 
 import pkg from 'formidable';
 const { IncomingForm } = pkg;
+
 import fs from 'fs';
 import fetch from 'node-fetch';
+import FormData from 'form-data';
 
 export const config = { api: { bodyParser: false } };
 
@@ -12,7 +14,7 @@ export default async function handler(req, res) {
     return res.status(405).send('Method Not Allowed');
   }
   try {
-    // 1) parse the multipart form to get the uploaded file
+    // 1) parse the upload
     const form = new IncomingForm();
     const { files } = await new Promise((resolve, reject) =>
       form.parse(req, (err, fields, files) =>
@@ -24,12 +26,16 @@ export default async function handler(req, res) {
       throw new Error('No file field in upload');
     }
 
-    const filePath = files.file.filepath;
-    const fileStream = fs.createReadStream(filePath);
+    const { filepath, originalFilename, mimetype } = files.file;
+    const fileStream = fs.createReadStream(filepath);
 
     // 2) Whisper transcription
     const whisperForm = new FormData();
-    whisperForm.append('file', fileStream);
+    // name must match OpenAI’s API: “file”
+    whisperForm.append('file', fileStream, {
+      filename: originalFilename,
+      contentType: mimetype
+    });
     whisperForm.append('model', 'whisper-1');
 
     const whisperRes = await fetch(
@@ -38,8 +44,9 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          // NOTE: do NOT set Content-Type here—form-data will do it for you
         },
-        body: whisperForm,
+        body: whisperForm
       }
     );
     if (!whisperRes.ok) {
@@ -52,10 +59,10 @@ export default async function handler(req, res) {
     const prompt = `
 You are a board-certified family medicine physician.
 Convert this transcript into a properly formatted SOAP note with:
-- Subjective  
-- Objective  
-- Assessment  
-- Plan  
+- Subjective
+- Objective
+- Assessment
+- Plan
 
 Also list tests, medications, referrals.
 Then provide a brief clinical analysis, a broad differential diagnosis, and next steps.
@@ -70,13 +77,13 @@ ${transcript}
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
         },
         body: JSON.stringify({
           model: 'gpt-4',
           messages: [{ role: 'user', content: prompt }],
-          temperature: 0,
-        }),
+          temperature: 0
+        })
       }
     );
     if (!chatRes.ok) {
