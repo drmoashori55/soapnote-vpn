@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <title>SOAP Note Generator</title>
   <style>
-    body { font-family: sans-serif; max-width:480px; margin:2em auto; }
-    input, button { margin-top:.5em; width:100%; }
-    pre { background:#f4f4f4; padding:1em; white-space:pre-wrap; }
+    body { font-family: sans-serif; max-width: 600px; margin: 2em auto; }
+    input, button { margin-top: 0.5em; width: 100%; padding: 0.5em; font-size: 1em; }
+    pre { background: #f4f4f4; padding: 1em; white-space: pre-wrap; margin-top: 1em; }
   </style>
 </head>
 <body>
   <h1>SOAP Note Generator</h1>
-  <p>Upload your consult audio (mp3/wav/m4a) and click Generate.</p>
+  <p>Upload your consult audio (mp3, wav, m4a) and click Generate.</p>
 
   <input id="fileInput" type="file" accept="audio/*">
   <button id="generate">Generate SOAP Note</button>
@@ -19,20 +19,32 @@
 
   <script>
     document.getElementById('generate').onclick = async () => {
-      let fileEl = document.getElementById('fileInput');
-      if (!fileEl.files.length) return alert('Please pick an audio file first');
+      const fileEl = document.getElementById('fileInput');
+      if (!fileEl.files.length) {
+        return alert('Please upload an audio file first');
+      }
       document.getElementById('output').textContent = 'Processing…';
 
-      let form = new FormData();
+      const form = new FormData();
       form.append('file', fileEl.files[0]);
 
       try {
-        let resp = await fetch('/api/soapnote', { method:'POST', body: form });
-        if (!resp.ok) throw new Error(resp.statusText);
-        let text = await resp.text();
-        document.getElementById('output').textContent = text;
+        const resp = await fetch('/api/soapnote', {
+          method: 'POST',
+          body: form
+        });
+        const body = await resp.text();
+        if (!resp.ok) {
+          // show the actual server-side error
+          document.getElementById('output').textContent =
+            '❌ Error from server:\n' + body;
+          return;
+        }
+        // successful response
+        document.getElementById('output').textContent = body;
       } catch (e) {
-        document.getElementById('output').textContent = 'Error: ' + e.message;
+        document.getElementById('output').textContent =
+          '⚠️ Fetch failed: ' + e.message;
       }
     };
   </script>
