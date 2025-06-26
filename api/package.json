@@ -2,7 +2,7 @@
   "name": "soapnote-vpn",
   "type": "module",
   "dependencies": {
-    "formidable": "^3.7.1",
+    "formidable": "^2.1.1",
     "node-fetch": "^3.4.0"
   }
 }
