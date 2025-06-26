@@ -10,17 +10,21 @@ export default async function handler(req, res) {
     return res.status(405).send('Method Not Allowed');
   }
   try {
-    // ----- your existing code here -----
+    // 1) parse the upload
     const form = new IncomingForm();
     const { files } = await new Promise((resolve, reject) =>
       form.parse(req, (err, fields, files) => err ? reject(err) : resolve({ fields, files }))
     );
 
+    if (!files.file) {
+      throw new Error('No file field in upload');
+    }
+
     const filePath = files.file.filepath;
     const fileStream = fs.createReadStream(filePath);
 
-    // Whisper
-    const tResp = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    // 2) Whisper transcription
+    const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
       body: (() => {
@@ -30,13 +34,30 @@ export default async function handler(req, res) {
         return fd;
       })()
     });
-    if (!tResp.ok) throw new Error(`Whisper failed: ${await tResp.text()}`);
-    const { text: transcript } = await tResp.json();
 
-    // GPT-4
-    const prompt = `You are a board certified family medicine physician…
-${transcript}`;
-    const cResp = await fetch('https://api.openai.com/v1/chat/completions', {
+    if (!whisperRes.ok) {
+      const errText = await whisperRes.text();
+      throw new Error(`Whisper error: ${errText}`);
+    }
+    const { text: transcript } = await whisperRes.json();
+
+    // 3) Build prompt
+    const prompt = `
+You are a board-certified family medicine physician.
+Convert this transcript into a properly formatted SOAP note with:
+- Subjective  
+- Objective  
+- Assessment  
+- Plan  
+
+Also list tests, medications, referrals.
+Then provide a brief clinical analysis, a broad differential diagnosis, and next steps.
+
+${transcript}
+`.trim();
+
+    // 4) GPT-4 completion
+    const chatRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -48,14 +69,17 @@ ${transcript}`;
         temperature: 0
       })
     });
-    if (!cResp.ok) throw new Error(`Chat failed: ${await cResp.text()}`);
-    const { choices } = await cResp.json();
 
+    if (!chatRes.ok) {
+      const errText = await chatRes.text();
+      throw new Error(`Chat error: ${errText}`);
+    }
+    const { choices } = await chatRes.json();
     return res.status(200).send(choices[0].message.content);
 
   } catch (err) {
     console.error(err);
-    // send the raw error message back so you can see it in the browser
+    // send the raw error message back to browser
     return res.status(500).send(`Error in /api/soapnote: ${err.message}`);
   }
 }
