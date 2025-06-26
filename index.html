@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SOAP Note Generator</title>
+  <style>
+    body { font-family: sans-serif; max-width:480px; margin:2em auto; }
+    input, button { margin-top:.5em; width:100%; }
+    pre { background:#f4f4f4; padding:1em; white-space:pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>SOAP Note Generator</h1>
+  <p>Upload your consult audio (mp3/wav/m4a) and click Generate.</p>
+
+  <input id="fileInput" type="file" accept="audio/*">
+  <button id="generate">Generate SOAP Note</button>
+  <pre id="output"></pre>
+
+  <script>
+    document.getElementById('generate').onclick = async () => {
+      let fileEl = document.getElementById('fileInput');
+      if (!fileEl.files.length) return alert('Please pick an audio file first');
+      document.getElementById('output').textContent = 'Processing…';
+
+      let form = new FormData();
+      form.append('file', fileEl.files[0]);
+
+      try {
+        let resp = await fetch('/api/soapnote', { method:'POST', body: form });
+        if (!resp.ok) throw new Error(resp.statusText);
+        let text = await resp.text();
+        document.getElementById('output').textContent = text;
+      } catch (e) {
+        document.getElementById('output').textContent = 'Error: ' + e.message;
+      }
+    };
+  </script>
+</body>
+</html>
