@@ -5,47 +5,74 @@
   <title>SOAP Note Generator</title>
   <style>
     body { font-family: sans-serif; max-width: 600px; margin: 2em auto; }
-    input, button { margin-top: 0.5em; width: 100%; padding: 0.5em; font-size: 1em; }
+    button { margin: 0.5em 0; padding: 0.6em 1em; font-size: 1em; }
+    #status { margin: 0.5em 0; font-weight: bold; }
     pre { background: #f4f4f4; padding: 1em; white-space: pre-wrap; margin-top: 1em; }
   </style>
 </head>
 <body>
   <h1>SOAP Note Generator</h1>
-  <p>Upload your consult audio (mp3, wav, m4a) and click Generate.</p>
+  <p>Click Start, have your consult, then click Stop & Generate.</p>
 
-  <input id="fileInput" type="file" accept="audio/*">
-  <button id="generate">Generate SOAP Note</button>
+  <button id="start">Start Recording</button>
+  <button id="stop" disabled>Stop & Generate Note</button>
+  <div id="status"></div>
   <pre id="output"></pre>
 
   <script>
-    document.getElementById('generate').onclick = async () => {
-      const fileEl = document.getElementById('fileInput');
-      if (!fileEl.files.length) {
-        return alert('Please upload an audio file first');
-      }
-      document.getElementById('output').textContent = 'Processing…';
+    let mediaRecorder, audioChunks;
 
-      const form = new FormData();
-      form.append('file', fileEl.files[0]);
-
+    document.getElementById('start').onclick = async () => {
+      // get mic access
       try {
-        const resp = await fetch('/api/soapnote', {
-          method: 'POST',
-          body: form
-        });
-        const body = await resp.text();
-        if (!resp.ok) {
-          // show the actual server-side error
-          document.getElementById('output').textContent =
-            '❌ Error from server:\n' + body;
-          return;
-        }
-        // successful response
-        document.getElementById('output').textContent = body;
-      } catch (e) {
-        document.getElementById('output').textContent =
-          '⚠️ Fetch failed: ' + e.message;
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+      } catch (err) {
+        return alert('Mic access denied or not supported');
       }
+
+      audioChunks = [];
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.onstart = () => {
+        document.getElementById('status').textContent = 'Recording…';
+        document.getElementById('start').disabled = true;
+        document.getElementById('stop').disabled = false;
+        document.getElementById('output').textContent = '';
+      };
+
+      mediaRecorder.start();
+    };
+
+    document.getElementById('stop').onclick = () => {
+      mediaRecorder.onstop = async () => {
+        document.getElementById('status').textContent = 'Processing…';
+        const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+        const form = new FormData();
+        form.append('file', blob, 'recording.webm');
+
+        try {
+          const resp = await fetch('/api/soapnote', {
+            method: 'POST',
+            body: form
+          });
+          const body = await resp.text();
+          if (!resp.ok) {
+            document.getElementById('output').textContent =
+              '❌ Error from server:\n' + body;
+          } else {
+            document.getElementById('output').textContent = body;
+          }
+        } catch (e) {
+          document.getElementById('output').textContent =
+            '⚠️ Fetch failed: ' + e.message;
+        }
+
+        document.getElementById('status').textContent = '';
+        document.getElementById('start').disabled = false;
+        document.getElementById('stop').disabled = true;
+      };
+
+      mediaRecorder.stop();
     };
   </script>
 </body>
