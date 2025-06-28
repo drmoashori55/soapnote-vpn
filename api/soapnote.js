@@ -59,35 +59,40 @@ export default async function handler(req, res) {
     const prompt = `You are a board-certified family medicine physician and expert medical scribe.  Take the following patient-doctor transcript and produce a comprehensive clinical note with these sections:
 
 1. SUBJECTIVE
-   • Summarize the patient’s chief complaint, history of present illness, any social, family, or surgical history mentioned, and allergies (if stated).
+   Summarize the patient’s chief complaint, history of present illness, any social, family, or surgical history mentioned, and allergies (if stated).
+
+2. CURRENT MEDICATIONS & SUPPLEMENTS
+   Bullet list of all active prescription, over-the-counter meds, and supplements the patient is taking.
+
+3. MEDICATION ALLERGIES
+   List any medication allergies or intolerances. 
 
 2. OBJECTIVE
-   • List any reported vital signs.
-   • List lab tests or imaging studies mentioned, with their results.
+   List any reported vital signs.
+   List lab tests or imaging studies mentioned, with their results.
 
 3. ASSESSMENT
-   • In paragraph form, state the most likely diagnosis.
-   • Provide a brief differential diagnosis (DDx).
-   • Explain how you ruled out any life-threatening alternatives.
+   In paragraph form, state the most likely diagnosis.
+   Provide a brief differential diagnosis (DDx).
+   Explain how you ruled out any life-threatening alternatives, if applicable.
 
 4. PLAN
    • Numbered list of next steps (medications prescribed, referrals, further tests, lifestyle advice, supplements, etc.).
 
-5. CURRENT MEDICATIONS & SUPPLEMENTS
-   • Bullet list of all active prescription, over-the-counter meds, and supplements the patient is taking.
+AI CLINICAL ANALYSIS
+   Review the entire interaction and suggest areas that warranted deeper discussion.
+   Highlight any missed potential serious diagnoses.
+   Advise on any medication/supplement interactions or other recommendations.
+   Assess the tone and pace of the doctor and whther they came across kind, compassionate, and caring or otherwise. 
 
-6. CLINICAL ANALYSIS
-   • Review the entire interaction and suggest areas that warranted deeper discussion.
-   • Highlight any missed potential serious diagnoses.
-   • Advise on any medication/supplement interactions or other recommendations.
+AFTER VISIT SUMMARY
+   Plain-language recap of what the doctor advised.
+   List of diagnoses considered, the final diagnosis, and diagnoses that were less likely. 
+   Any red-flag symptoms or “when to call the doctor” warnings.
+   A list of common and also serious side effects to consider for any medications prescribed. 
 
-7. AFTER VISIT SUMMARY (for the patient)
-   • Plain-language recap of what the doctor advised.
-   • List of diagnoses considered.
-   • Any red-flag symptoms or “when to call the doctor” warnings.
-
-8. RESOURCES
-   • For every medication or supplement you recommended, include a URL (drugs.com or reputable supplement sites).
+RESOURCES
+   • For every medication or supplement recommended or prescribed, include a URL (drugs.com or reputable supplement sites).
    • For any exercise advice given, include URLs linking to example instructions or demonstrations.
 
 ----
