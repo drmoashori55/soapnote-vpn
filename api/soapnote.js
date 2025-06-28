@@ -61,8 +61,12 @@ export default async function handler(req, res) {
 1. SUBJECTIVE
    Summarize the patient’s chief complaint, history of present illness, any social, family, or surgical history mentioned, and allergies (if stated).
 
-2. CURRENT MEDICATIONS & SUPPLEMENTS
-   Bullet list of all active prescription, over-the-counter meds, and supplements the patient is taking.
+2. MEDICAL HISTORY
+   • Bullet list of all active prescription, over-the-counter meds, and supplements the patient is taking.
+   • Bullet list of family history
+   • Bullet list of social history
+   • Bullet list of surgical history
+   • Bullet list of any other relevant medical problems or diagnoses
 
 3. MEDICATION ALLERGIES
    List any medication allergies or intolerances. 
