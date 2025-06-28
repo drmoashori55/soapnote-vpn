@@ -1,4 +1,4 @@
-// api/soapnote.js
+a// api/soapnote.js
 
 import pkg from 'formidable';
 const { IncomingForm } = pkg;
@@ -56,17 +56,42 @@ export default async function handler(req, res) {
     const { text: transcript } = await whisperRes.json();
 
     // 3) Build your prompt
-    const prompt = `
-You are a board-certified family medicine physician.
-Convert this transcript into a properly formatted SOAP note with:
-- Subjective
-- Objective
-- Assessment
-- Plan
+    const prompt = `You are a board-certified family medicine physician and expert medical scribe.  Take the following patient-doctor transcript and produce a comprehensive clinical note with these sections:
 
-Also list tests, medications, referrals.
-Then provide a brief clinical analysis, a broad differential diagnosis, and next steps.
+1. SUBJECTIVE
+   • Summarize the patient’s chief complaint, history of present illness, any social, family, or surgical history mentioned, and allergies (if stated).
 
+2. OBJECTIVE
+   • List any reported vital signs.
+   • List lab tests or imaging studies mentioned, with their results.
+
+3. ASSESSMENT
+   • In paragraph form, state the most likely diagnosis.
+   • Provide a brief differential diagnosis (DDx).
+   • Explain how you ruled out any life-threatening alternatives.
+
+4. PLAN
+   • Numbered list of next steps (medications prescribed, referrals, further tests, lifestyle advice, supplements, etc.).
+
+5. CURRENT MEDICATIONS & SUPPLEMENTS
+   • Bullet list of all active prescription, over-the-counter meds, and supplements the patient is taking.
+
+6. CLINICAL ANALYSIS
+   • Review the entire interaction and suggest areas that warranted deeper discussion.
+   • Highlight any missed potential serious diagnoses.
+   • Advise on any medication/supplement interactions or other recommendations.
+
+7. AFTER VISIT SUMMARY (for the patient)
+   • Plain-language recap of what the doctor advised.
+   • List of diagnoses considered.
+   • Any red-flag symptoms or “when to call the doctor” warnings.
+
+8. RESOURCES
+   • For every medication or supplement you recommended, include a URL (drugs.com or reputable supplement sites).
+   • For any exercise advice given, include URLs linking to example instructions or demonstrations.
+
+----
+Transcript:
 ${transcript}
 `.trim();
 
